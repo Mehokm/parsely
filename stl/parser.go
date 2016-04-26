@@ -3,19 +3,21 @@ package stl
 import (
 	"bufio"
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 )
 
-var ASCIIBytes = []byte("solid")
+var asciiBytes = []byte("solid")
 
 func Parse(file io.Reader) {
 	br := bufio.NewReader(file)
 
 	testBytes, _ := br.Peek(5)
-	if bytes.Equal(testBytes, ASCIIBytes) {
+	if bytes.Equal(testBytes, asciiBytes) {
 		fmt.Println(parseASCII(br))
 	} else {
 		parseBinary(br)
@@ -23,25 +25,26 @@ func Parse(file io.Reader) {
 
 }
 
-func parseASCII(r io.Reader) *StlObject {
+func parseASCII(r io.Reader) *Solid {
 	scanner := bufio.NewScanner(r)
 
-	so := &StlObject{}
-	so.Facets = make([]Facet, 0)
+	s := &Solid{}
+	s.Facets = make([]Facet, 0)
 
 	for scanner.Scan() {
 		tokens := getTokensFromString(scanner.Text())
 
 		if tokens[0] == "solid" && len(tokens) > 1 {
-			so.Name = tokens[1]
+			s.Name = tokens[1]
 		}
 
 		if tokens[0] == "facet" && tokens[1] == "normal" {
-			so.Facets = append(so.Facets, Facet{Normal: getVec3FromStringSlice(tokens[2:])})
+			s.Facets = append(s.Facets, Facet{Normal: getVec3FromStringSlice(tokens[2:])})
 		}
 
-		var vs [3]Vec3
 		if tokens[0] == "outer" && tokens[1] == "loop" {
+			var vs [3]Vec3
+
 			for i := 0; i < 3; i++ {
 				scanner.Scan()
 				tokens = getTokensFromString(scanner.Text())
@@ -50,11 +53,11 @@ func parseASCII(r io.Reader) *StlObject {
 					vs[i] = getVec3FromStringSlice(tokens[1:])
 				}
 			}
-			so.Facets[len(so.Facets)-1].Vertices = vs
+			s.Facets[len(s.Facets)-1].Vertices = vs
 		}
 	}
 
-	return so
+	return s
 }
 
 func getTokensFromString(s string) []string {
@@ -80,6 +83,30 @@ func getVec3FromStringSlice(ss []string) Vec3 {
 	return Vec3{}
 }
 
-func parseBinary(file io.Reader) {
+func parseBinary(r io.Reader) {
+	binaryHeader := make([]byte, 84)
 
+	r.Read(binaryHeader)
+
+	facets := make([]*Facet, binary.LittleEndian.Uint32(binaryHeader[80:]))
+	for i := 0; i < len(facets); i++ {
+		binaryFacet := make([]byte, 50)
+
+		r.Read(binaryFacet)
+
+		fmt.Println(getVec3FromByteSlice(binaryFacet, 1))
+	}
+}
+
+func uint32ToFloat32(u []byte) float32 {
+	return math.Float32frombits(binary.LittleEndian.Uint32(u))
+}
+
+func getVec3FromByteSlice(b []byte, offset int) Vec3 {
+	start := 12 * offset
+	return Vec3{
+		float64(uint32ToFloat32(b[start : start+4])),
+		float64(uint32ToFloat32(b[start : start+8])),
+		float64(uint32ToFloat32(b[start : start+12])),
+	}
 }

@@ -1,6 +1,6 @@
 package stl
 
-type StlObject struct {
+type Solid struct {
 	Name   string
 	Facets []Facet
 }
