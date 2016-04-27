@@ -7,7 +7,7 @@ import (
 )
 
 func TestExample(t *testing.T) {
-	aFile, err := os.Open("../examples/cube_ascii.stl")
+	aFile, err := os.Open("../examples/cube_binary.stl")
 	if err != nil {
 		fmt.Println(err)
 	}

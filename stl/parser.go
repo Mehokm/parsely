@@ -38,7 +38,7 @@ func parseASCII(r io.Reader) *Solid {
 			s.Name = tokens[1]
 		}
 
-		if tokens[0] == "facet" && tokens[1] == "normal" {
+		if len(tokens) == 5 && tokens[0] == "facet" && tokens[1] == "normal" {
 			s.Facets = append(s.Facets, Facet{Normal: getVec3FromStringSlice(tokens[2:])})
 		}
 
@@ -49,7 +49,7 @@ func parseASCII(r io.Reader) *Solid {
 				scanner.Scan()
 				tokens = getTokensFromString(scanner.Text())
 
-				if tokens[0] == "vertex" {
+				if len(tokens) == 4 && tokens[0] == "vertex" {
 					vs[i] = getVec3FromStringSlice(tokens[1:])
 				}
 			}
@@ -61,7 +61,7 @@ func parseASCII(r io.Reader) *Solid {
 }
 
 func getTokensFromString(s string) []string {
-	return strings.Split(strings.TrimSpace(s), " ")
+	return strings.Fields(s)
 }
 
 func getVec3FromStringSlice(ss []string) Vec3 {
@@ -94,8 +94,17 @@ func parseBinary(r io.Reader) {
 
 		r.Read(binaryFacet)
 
-		fmt.Println(getVec3FromByteSlice(binaryFacet, 1))
+		normal := getVec3FromByteSlice(binaryFacet, 0)
+		vs := [3]Vec3{
+			getVec3FromByteSlice(binaryFacet, 1),
+			getVec3FromByteSlice(binaryFacet, 2),
+			getVec3FromByteSlice(binaryFacet, 3),
+		}
+
+		facets[i] = &Facet{normal, vs}
 	}
+
+	fmt.Println(facets)
 }
 
 func uint32ToFloat32(u []byte) float32 {
