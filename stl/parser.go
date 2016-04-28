@@ -20,7 +20,7 @@ func Parse(file io.Reader) {
 	if bytes.Equal(testBytes, asciiBytes) {
 		fmt.Println(parseASCII(br))
 	} else {
-		parseBinary(br)
+		fmt.Println(parseBinary(br))
 	}
 
 }
@@ -83,12 +83,15 @@ func getVec3FromStringSlice(ss []string) Vec3 {
 	return Vec3{}
 }
 
-func parseBinary(r io.Reader) {
+func parseBinary(r io.Reader) *Solid {
+	s := &Solid{}
 	binaryHeader := make([]byte, 84)
 
 	r.Read(binaryHeader)
 
-	facets := make([]*Facet, binary.LittleEndian.Uint32(binaryHeader[80:]))
+	s.Name = strings.TrimSpace(string(binaryHeader[:80]))
+
+	facets := make([]Facet, binary.LittleEndian.Uint32(binaryHeader[80:]))
 	for i := 0; i < len(facets); i++ {
 		binaryFacet := make([]byte, 50)
 
@@ -101,10 +104,11 @@ func parseBinary(r io.Reader) {
 			getVec3FromByteSlice(binaryFacet, 3),
 		}
 
-		facets[i] = &Facet{normal, vs}
+		facets[i] = Facet{normal, vs}
 	}
+	s.Facets = facets
 
-	fmt.Println(facets)
+	return s
 }
 
 func uint32ToFloat32(u []byte) float32 {
