@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"math"
 	"strconv"
@@ -13,16 +12,15 @@ import (
 
 var asciiBytes = []byte("solid")
 
-func Parse(file io.Reader) {
+func Parse(file io.Reader) *Solid {
 	br := bufio.NewReader(file)
 
 	testBytes, _ := br.Peek(5)
 	if bytes.Equal(testBytes, asciiBytes) {
-		fmt.Println(parseASCII(br))
+		return parseASCII(br)
 	} else {
-		fmt.Println(parseBinary(br))
+		return parseBinary(br)
 	}
-
 }
 
 func parseASCII(r io.Reader) *Solid {
@@ -65,7 +63,9 @@ func getTokensFromString(s string) []string {
 }
 
 func getVec3FromStringSlice(ss []string) Vec3 {
+	var v Vec3
 	var x, y, z float64
+
 	if len(ss) == 3 {
 		if a, err := strconv.ParseFloat(ss[0], 64); err == nil {
 			x = a
@@ -77,10 +77,12 @@ func getVec3FromStringSlice(ss []string) Vec3 {
 			z = c
 		}
 
-		return Vec3{x, y, z}
+		v.X = x
+		v.Y = y
+		v.Z = z
 	}
 
-	return Vec3{}
+	return v
 }
 
 func parseBinary(r io.Reader) *Solid {
